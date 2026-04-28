@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrisisConnect Prototype</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS for OpenStreetMap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Mobile App Simulator (User App) -->
+        <div class="mobile-simulator">
+            <div class="mobile-frame" id="mobileFrame">
+                
+                <!-- 1. Splash Screen -->
+                <div class="screen active" id="view-splash">
+                    <div class="splash-content">
+                        <i class="fas fa-shield-alt logo-icon pulse-anim"></i>
+                        <h1 class="logo-text">CrisisConnect</h1>
+                        <div class="loading-bar">
+                            <div class="loading-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Login / Signup Screen -->
+                <div class="screen" id="view-login">
+                    <div class="login-container">
+                        <div class="login-header">
+                            <i class="fas fa-shield-alt"></i>
+                            <h2>Welcome Back</h2>
+                            <p>Sign in to access emergency services</p>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" placeholder="Email Address" value="user@example.com">
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" placeholder="Password" value="password123">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.navigate('home')">Sign In</button>
+                        
+                        <div class="divider"><span>OR</span></div>
+                        
+                        <button class="btn btn-google" onclick="app.navigate('home')">
+                            <i class="fab fa-google"></i> Continue with Google
+                        </button>
+                        
+                        <div class="login-footer">
+                            New user? <a href="#">Create an account</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Dashboard (Home) -->
+                <div class="screen" id="view-home">
+                    <div class="mobile-header">
+                        <div class="user-info">
+                            <i class="fas fa-user-circle"></i>
+                            <span>John Doe</span>
+                        </div>
+                        <div class="location-status offline-mode hidden" id="offlineIndicator">
+                            <i class="fas fa-wifi-slash text-danger"></i>
+                            <span>Mesh/SMS Fallback</span>
+                        </div>
+                        <div class="location-status" id="onlineIndicator">
+                            <i class="fas fa-map-marker-alt text-success"></i>
+                            <span>GPS Active</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mobile-body">
+                        <!-- Big SOS Button -->
+                        <div class="sos-container" onclick="app.navigate('sos')">
+                            <button class="sos-button-main pulse-red">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>SOS</span>
+                            </button>
+                            <p class="sos-help-text">Tap for Emergency Rescue</p>
+                        </div>
+
+                        <!-- Status Toggles -->
+                        <div class="status-toggles">
+                            <button class="btn-toggle safe" id="btnMarkSafe" onclick="app.toggleSafe()">
+                                <i class="fas fa-check-circle"></i> Mark as Safe
+                            </button>
+                            <button class="btn-toggle volunteer" id="btnVolunteer" onclick="app.toggleVolunteer()">
+                                <i class="fas fa-hands-helping"></i> Volunteer
+                            </button>
+                        </div>
+
+                        <!-- Action Grid -->
+                        <div class="grid-layout mt-10">
+                            <div class="grid-item bg-danger" onclick="app.navigate('report')">
+                                <i class="fas fa-camera"></i>
+                                <span>Report Incident</span>
+                            </div>
+                            <div class="grid-item bg-primary" onclick="app.navigate('helplines')">
+                                <i class="fas fa-phone-alt"></i>
+                                <span>Helplines</span>
+                            </div>
+                            <div class="grid-item bg-blue" onclick="app.navigate('nearby')">
+                                <i class="fas fa-hospital"></i>
+                                <span>Nearby Help</span>
+                            </div>
+                            <div class="grid-item bg-purple" onclick="app.navigate('contacts')">
+                                <i class="fas fa-address-book"></i>
+                                <span>Contacts</span>
+                            </div>
+                            <div class="grid-item bg-green" onclick="app.navigate('tips')">
+                                <i class="fas fa-book-medical"></i>
+                                <span>Safety Tips</span>
+                            </div>
+                            <div class="grid-item bg-orange" onclick="app.navigate('airdrop')">
+                                <i class="fas fa-parachute-box"></i>
+                                <span>Request Airdrop</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. SOS Screen -->
+                <div class="screen" id="view-sos">
+                    <div class="nav-header">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2>Emergency Triggered</h2>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    <div class="mobile-body centered-flex">
+                        <div class="radar-anim">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3 class="mt-20">Fetching Live Location...</h3>
+                        <p class="text-muted text-center" id="sosLocationText">Acquiring GPS coordinates</p>
+                        
+                        <div class="sms-log mt-20" id="smsLog">
+                            <div class="log-title">Sending Alerts:</div>
+                            <!-- SMS logs injected here -->
+                        </div>
+                        
+                        <button class="btn btn-outline-danger mt-auto" onclick="app.cancelSOS()">Cancel SOS</button>
+                    </div>
+                </div>
+
+                <!-- 5. Report Incident Screen -->
+                <div class="screen" id="view-report">
+                    <div class="nav-header">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2>Report Incident</h2>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    <div class="mobile-body">
+                        <div class="input-group">
+                            <select id="reportType" class="form-input">
+                                <option value="Fire">Fire</option>
+                                <option value="Flood">Flood / Water Logging</option>
+                                <option value="Building Collapse">Building Collapse</option>
+                                <option value="Road Accident">Road Accident</option>
+                                <option value="Medical Emergency">Medical Emergency</option>
+                            </select>
+                        </div>
+                        <div class="input-group mt-10">
+                            <textarea id="reportDesc" class="form-input" placeholder="Describe the situation..." rows="3"></textarea>
+                        </div>
+                        
+                        <div class="upload-area mt-10" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Tap to upload photo/video of disaster</p>
+                            <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="app.handleFileUpload(event)">
+                        </div>
+                        <div id="uploadPreview" class="hidden mt-10 text-success text-center">
+                            <i class="fas fa-check-circle"></i> Image attached!
+                        </div>
+
+                        <button class="btn btn-primary mt-auto" onclick="app.submitReport()">Submit Report</button>
+                    </div>
+                </div>
+
+                <!-- 6. Helplines Screen -->
+                <div class="screen" id="view-helplines">
+                    <div class="nav-header">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2>National Helplines</h2>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    <div class="mobile-body">
+                        <div class="helpline-list">
+                            <div class="helpline-card" onclick="alert('Calling 112...')">
+                                <div class="h-icon bg-danger"><i class="fas fa-phone-alt"></i></div>
+                                <div class="h-details">
+                                    <h4>National Emergency Number</h4>
+                                    <p>112</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                            <div class="helpline-card" onclick="alert('Calling NDRF...')">
+                                <div class="h-icon bg-warning"><i class="fas fa-hard-hat"></i></div>
+                                <div class="h-details">
+                                    <h4>NDRF Helpline</h4>
+                                    <p>9711077372</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                            <div class="helpline-card" onclick="alert('Calling Police...')">
+                                <div class="h-icon bg-primary"><i class="fas fa-shield-alt"></i></div>
+                                <div class="h-details">
+                                    <h4>Police</h4>
+                                    <p>100</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                            <div class="helpline-card" onclick="alert('Calling Fire...')">
+                                <div class="h-icon bg-danger"><i class="fas fa-fire"></i></div>
+                                <div class="h-details">
+                                    <h4>Fire Station</h4>
+                                    <p>101</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                            <div class="helpline-card" onclick="alert('Calling Ambulance...')">
+                                <div class="h-icon bg-green"><i class="fas fa-ambulance"></i></div>
+                                <div class="h-details">
+                                    <h4>Ambulance</h4>
+                                    <p>102 / 108</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Nearby Help Screen (Map) -->
+                <div class="screen" id="view-nearby">
+                    <div class="nav-header">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2>Nearby Help</h2>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    <div class="map-view-container">
+                        <div id="mobileMap" style="flex: 1; min-height: 250px; z-index: 1;"></div>
+                        <div class="nearby-list" id="nearbyList">
+                            <!-- Dynamically populated by JS -->
+                            <div class="text-center p-20 text-muted">Searching for help nearby...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. Contacts Management Screen -->
+                <div class="screen" id="view-contacts">
+                    <div class="nav-header">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2>Emergency Contacts</h2>
+                        <i class="fas fa-plus" onclick="app.openAddContactModal()"></i>
+                    </div>
+                    <div class="mobile-body">
+                        <div class="contacts-list" id="contactsList">
+                            <!-- Contacts injected here via JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Add Contact Modal -->
+                    <div class="modal hidden" id="addContactModal">
+                        <div class="modal-content glass">
+                            <h3>Add Contact</h3>
+                            <input type="text" id="contactName" placeholder="Name (e.g. Mom)" class="modal-input">
+                            <input type="tel" id="contactPhone" placeholder="Phone Number" class="modal-input">
+                            <div class="modal-actions">
+                                <button class="btn btn-secondary" onclick="app.closeAddContactModal()">Cancel</button>
+                                <button class="btn btn-primary" onclick="app.saveContact()">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. Expanded Safety Guidelines Screen -->
+                <div class="screen" id="view-tips">
+                    <div class="nav-header">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2>Safety Guidelines</h2>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    <div class="mobile-body">
+                        
+                        <div class="safety-card animate-slide-up" style="animation-delay: 0.1s;">
+                            <div class="s-card-header bg-brown" onclick="app.toggleSafetyCard(this)">
+                                <div><i class="fas fa-house-damage"></i> Earthquake</div>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="s-card-body">
+                                <ul>
+                                    <li><b>DROP</b> down onto your hands and knees.</li>
+                                    <li><b>COVER</b> your head and neck under a sturdy table or desk.</li>
+                                    <li><b>HOLD ON</b> to your shelter until shaking stops.</li>
+                                    <li>Do not run outside during shaking!</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="safety-card animate-slide-up" style="animation-delay: 0.2s;">
+                            <div class="s-card-header bg-deepblue" onclick="app.toggleSafetyCard(this)">
+                                <div><i class="fas fa-water"></i> Flood</div>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="s-card-body">
+                                <ul>
+                                    <li>Move to higher ground immediately.</li>
+                                    <li>Do not walk, swim, or drive through flood waters (Turn Around, Don't Drown!).</li>
+                                    <li>Stay off bridges over fast-moving water.</li>
+                                    <li>Disconnect electronic appliances.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="safety-card animate-slide-up" style="animation-delay: 0.3s;">
+                            <div class="s-card-header bg-crimson" onclick="app.toggleSafetyCard(this)">
+                                <div><i class="fas fa-fire"></i> Fire</div>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="s-card-body">
+                                <ul>
+                                    <li>Stay low to the ground to avoid smoke inhalation.</li>
+                                    <li>Feel doors with the back of your hand before opening. If hot, find another way.</li>
+                                    <li>If your clothes catch fire: <b>Stop, Drop, and Roll.</b></li>
+                                    <li>Once outside, stay outside!</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="safety-card animate-slide-up" style="animation-delay: 0.4s;">
+                            <div class="s-card-header bg-deeppurple" onclick="app.toggleSafetyCard(this)">
+                                <div><i class="fas fa-car-crash"></i> Road Accident</div>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="s-card-body">
+                                <ul>
+                                    <li>Secure the scene. Turn on hazard lights.</li>
+                                    <li>Call 112/Ambulance immediately.</li>
+                                    <li>Do not move severely injured victims unless the vehicle is burning.</li>
+                                    <li>Apply basic first aid/pressure to bleeding wounds.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="safety-card animate-slide-up" style="animation-delay: 0.5s;">
+                            <div class="s-card-header bg-teal" onclick="app.toggleSafetyCard(this)">
+                                <div><i class="fas fa-wind"></i> Cyclone / Hurricane</div>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="s-card-body">
+                                <ul>
+                                    <li>Stay indoors in the strongest part of the building.</li>
+                                    <li>Do not go outside during the calm 'eye' of the storm.</li>
+                                    <li>Board up glass windows or tape them to prevent shattering.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="safety-card animate-slide-up" style="animation-delay: 0.6s;">
+                            <div class="s-card-header bg-orange" onclick="app.toggleSafetyCard(this)">
+                                <div><i class="fas fa-mountain"></i> Landslide</div>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="s-card-body">
+                                <ul>
+                                    <li>Listen for unusual sounds like trees cracking or boulders knocking together.</li>
+                                    <li>Move away from the path of the landslide or mudflow quickly.</li>
+                                    <li>If escape is impossible, curl into a tight ball and protect your head.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- 10. Airdrop Request Screen -->
+                <div class="screen" id="view-airdrop">
+                    <div class="nav-header">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2>Request Airdrop</h2>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    <div class="mobile-body">
+                        <div class="location-box text-center">
+                            <div class="radar-anim" style="width: 80px; height: 80px; margin: 0 auto 15px auto;">
+                                <i class="fas fa-crosshairs"></i>
+                            </div>
+                            <h4 class="text-success">Exact Target Location Acquired</h4>
+                            <div class="coords-display mt-10">
+                                <b>Lat:</b> 20.5937 <br>
+                                <b>Lng:</b> 75.8577 <br>
+                                <span class="text-muted" style="font-size: 0.8rem;">(Indore, Madhya Pradesh)</span>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-20 mb-10">Select Required Supplies:</h4>
+                        <div class="supplies-list">
+                            <label class="supply-item">
+                                <div>
+                                    <i class="fas fa-first-aid text-danger"></i> Medical Kits
+                                </div>
+                                <input type="checkbox" id="checkMedical" value="Medical Kits">
+                            </label>
+                            <label class="supply-item">
+                                <div>
+                                    <i class="fas fa-bottle-water text-primary"></i> Food & Water
+                                </div>
+                                <input type="checkbox" id="checkFood" value="Food & Water">
+                            </label>
+                            <label class="supply-item">
+                                <div>
+                                    <i class="fas fa-blanket text-warning"></i> Blankets / Tents
+                                </div>
+                                <input type="checkbox" id="checkBlankets" value="Blankets">
+                            </label>
+                        </div>
+                        
+                        <div class="input-group mt-20">
+                            <textarea id="airdropNote" class="form-input" placeholder="Any specific needs? (e.g. Insulin, baby formula)..." rows="2"></textarea>
+                        </div>
+
+                        <button class="btn btn-primary mt-auto" onclick="app.submitAirdropRequest()">
+                            <i class="fas fa-paper-plane"></i> Transmit Request
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 10. SAHAYAK Chatbot Screen -->
+                <div class="screen" id="view-chatbot">
+                    <div class="nav-header bg-chatbot">
+                        <i class="fas fa-arrow-left" onclick="app.navigate('home')"></i>
+                        <h2><i class="fas fa-robot"></i> SAHAYAK AI</h2>
+                        <div style="width: 20px;"></div>
+                    </div>
+                    <div class="chat-container" id="chatContainer">
+                        <div class="chat-message bot">
+                            <div class="bubble">Hello! I am SAHAYAK, your emergency AI assistant. How can I help you right now?</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" placeholder="Ask for emergency advice..." onkeypress="if(event.key === 'Enter') app.sendChatMessage()">
+                        <button onclick="app.sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <!-- Floating Action Button for SAHAYAK -->
+                <button class="fab-sahayak pulse-bot" onclick="app.navigate('chatbot')">
+                    <i class="fas fa-robot"></i>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div class="admin-dashboard">
+            <header class="admin-header glass">
+                <h1><i class="fas fa-shield-heart"></i> CrisisConnect COMMAND</h1>
+                <div class="admin-controls">
+                    <div class="admin-stats">
+                        <div class="stat-pill">Safe: <span class="highlight-green" id="adminSafe">1,240</span></div>
+                        <div class="stat-pill">Volunteers: <span class="highlight" id="adminVolunteers">32</span></div>
+                    </div>
+                    
+                    <!-- 3-Dot Menu -->
+                    <div class="settings-menu-container">
+                        <button class="icon-btn-dot" onclick="app.toggleSettingsMenu()">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="settings-dropdown hidden" id="settingsDropdown">
+                            <button onclick="app.toggleDeviceView()"><i class="fas fa-desktop"></i> Switch Device View</button>
+                            <button onclick="app.toggleDarkTheme()"><i class="fas fa-moon"></i> Darker Theme</button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <!-- Map / Heatmap Area -->
+                <div class="dash-card map-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-map-marked-alt"></i> Live Crisis Map</h3>
+                        <div class="pulse-indicator">Global Live Tracking</div>
+                    </div>
+                    <div id="adminMap" style="flex: 1; position: relative;">
+                        <!-- Locate Me Button Overlay -->
+                        <button class="map-overlay-btn" onclick="adminSim.locateUserAndScan()" title="Locate & Scan Stations">
+                            <i class="fas fa-crosshairs"></i> Locate & Scan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Feed & AI Triage -->
+                <div class="dash-card feed-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list-ul"></i> Live SOS Feed & Triage</h3>
+                    </div>
+                    <div class="feed-list" id="feedList"></div>
+                </div>
+
+                <!-- Resource Allocation -->
+                <div class="dash-card resources-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-box"></i> Live Resource Allocator</h3>
+                        <button class="btn-restock" onclick="app.restockResources()"><i class="fas fa-parachute-box"></i> Request Airdrop</button>
+                    </div>
+                    <div class="resource-chart">
+                        <div class="bar-container">
+                            <span class="bar-label">Medical Kits (<span id="valMedical">85</span>%)</span>
+                            <div class="bar-bg"><div class="bar-fill" id="barMedical" style="width: 85%; background: #ef4444;"></div></div>
+                        </div>
+                        <div class="bar-container">
+                            <span class="bar-label">Fire Extinguishants / Water (<span id="valFire">60</span>%)</span>
+                            <div class="bar-bg"><div class="bar-fill" id="barFire" style="width: 60%; background: #f59e0b;"></div></div>
+                        </div>
+                        <div class="bar-container">
+                            <span class="bar-label">Search & Rescue Teams (<span id="valRescue">90</span>%)</span>
+                            <div class="bar-bg"><div class="bar-fill" id="barRescue" style="width: 90%; background: #10b981;"></div></div>
+                        </div>
+                        <div class="bar-container">
+                            <span class="bar-label">Food & Blankets (<span id="valFood">40</span>%)</span>
+                            <div class="bar-bg"><div class="bar-fill" id="barFood" style="width: 40%; background: #3b82f6;"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script src="sahayak_db.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
